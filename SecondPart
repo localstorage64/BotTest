@@ -1,1 +1,212 @@
-bW9yZSBib3RzIGZvciB0aGUgVm9pZA==
+
+
+(function() {
+
+    'use strict';
+
+    const delays = [1000]; // ms
+  
+    let drawing = false;
+
+    let currentX, currentY;
+
+    // === Panel ===
+
+    const panel = document.createElement('div');
+  
+    panel.style.position = 'fixed';
+
+    panel.style.top = '10px';
+
+    panel.style.right = '10px';
+
+    panel.style.background = '#222';
+
+    panel.style.color = '#fff';
+
+    panel.style.padding = '10px';
+
+    panel.style.zIndex = '9999';
+
+    panel.style.fontSize = '12px';
+
+    panel.style.width = '126px';
+
+    panel.style.border = '1px solid #555';
+
+    panel.style.cursor = 'grab';
+
+  let drag = false, offX = 0, offY = 0;
+
+panel.addEventListener("mousedown", e => {
+  drag = true;
+  offX = e.clientX - panel.offsetLeft;
+  offY = e.clientY - panel.offsetTop;
+});
+
+document.addEventListener("mousemove", e => {
+  if (!drag) return;
+  panel.style.left = (e.clientX - offX) + "px";
+  panel.style.top = (e.clientY - offY) + "px";
+});
+
+document.addEventListener("mouseup", () => drag = false);
+
+panel.addEventListener("touchstart", e => {
+  drag = true;
+  const t = e.touches[0];
+  offX = t.clientX - panel.offsetLeft;
+  offY = t.clientY - panel.offsetTop;
+});
+
+document.addEventListener("touchmove", e => {
+  if (!drag) return;
+  const t = e.touches[0];
+  panel.style.left = (t.clientX - offX) + "px";
+  panel.style.top = (t.clientY - offY) + "px";
+});
+
+document.addEventListener("touchend", () => drag = false);
+  
+    panel.innerHTML = `
+
+        <b>PxBot 0.2</b><br>
+
+        <input id="coordX" type="number" value="" style="width:60px" placeholder="X coord"> X
+
+        <input id="coordY" type="number" value="" style="width:60px" placeholder="Y coord"> Y <br>
+
+        <button id="btn_start">Start</button>
+
+        <button id="btn_stop">Stop</button>
+
+        <hr>
+
+        <div id="logDiv" style="max-height:27px;overflow:auto;background:darkblue;padding:3px;"></div>
+
+    `;
+
+    document.body.appendChild(panel);
+
+    function log(msg, type="info") {
+
+        const logDiv = document.getElementById('logDiv');
+
+        const time = new Date().toLocaleTimeString();
+
+        const color = type === "error" ? "red" : "white";
+
+        logDiv.innerHTML += `<span style="color:${color}">[${time}] ${msg}</span><br>`;
+
+        logDiv.scrollTop = logDiv.scrollHeight;
+
+    }
+  
+
+    function wrapCoord(value) {
+
+        if (value > 65536) return -1;
+
+        if (value < -65536) return 1;
+
+        return value;
+
+    }
+
+    function placePixel(x, y) {
+
+        const canvas = document.querySelector('canvas');
+
+        if (!canvas) {
+
+            log("Canvas not found", "error");
+
+            return false;
+
+        }
+
+        const rect = canvas.getBoundingClientRect();
+
+        const centerX = rect.left + rect.width / 2;
+
+        const centerY = rect.top + rect.height / 2;
+
+        const eventInit = {
+
+            bubbles: true,
+
+            cancelable: true,
+
+            clientX: centerX,
+
+            clientY: centerY,
+
+            button: 0
+
+        };
+
+        canvas.dispatchEvent(new MouseEvent('mousedown', eventInit));
+
+        canvas.dispatchEvent(new MouseEvent('mouseup', eventInit));
+
+        return true;
+
+    }
+  
+
+    
+
+    function randomDelay() {
+
+        return delays[Math.floor(Math.random() * delays.length)];
+
+    }
+  
+
+    function drawStep() {
+
+        if (!drawing) return;
+
+        currentX = wrapCoord(currentX + 1);
+
+        const zoom = 33;
+
+        const hash = `#d,${currentX},${currentY},${zoom}`;
+
+        window.location.hash = hash;
+
+        if (placePixel(currentX, currentY)) {
+
+            log(`place <br> ${currentX},${currentY}`);
+
+        }
+
+        setTimeout(drawStep, randomDelay());
+
+    }
+
+    document.getElementById('btn_start').onclick = () => {
+
+        if (!drawing) {
+
+            currentX = parseInt(document.getElementById('coordX').value);
+
+            currentY = parseInt(document.getElementById('coordY').value);
+
+            drawing = true;
+
+            log("build_1");
+
+            drawStep();
+
+        }
+
+    };
+
+    document.getElementById('btn_stop').onclick = () => {
+
+        drawing = false;
+
+        log("build_0");
+
+    };
