@@ -210,3 +210,4 @@ document.addEventListener("touchend", () => drag = false);
         log("build_0");
 
     };
+})();
